@@ -16,7 +16,7 @@
 import string
 import re
 
-# TODO add comma after every x entry
+# TODO add comma after every x entry, optimize
 
 def parseData(file):
     with open(file) as main_file:
@@ -29,9 +29,9 @@ def parseData(file):
         replace_punctuation = re.compile('[%s]' % re.escape(string.punctuation))
         for x in main_file:
             if "product/productId: " in x:
-                reviews.append(count)
+                reviews.append(str(count)+",")
                 str_entry = x.replace("product/productId: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                reviews.append(str_entry)
+                reviews.append(str_entry+",")
 
             elif "product/title: " in x:
                 str_entry = x.replace("product/title: ","").replace("\\","\\").replace('"',quote).strip('\n')
@@ -39,44 +39,37 @@ def parseData(file):
                 terms = terms.split(" ")
                 for term in terms:
                     if len(term)>2:
-                        pterms.append(term.lower())
+                        pterms.append(term.lower()+",")
                         pterms.append(str(count)+"\n")
-                        with open("pterms.txt","a") as pterms_file:
-                            pterms_file.write(','.join(str(entry) for entry in pterms))
-                        del pterms[:]
 
-                reviews.append('"'+str_entry+'"')
+                reviews.append('"'+str_entry+'",')
 
             elif "product/price: " in x:
                 str_entry = x.replace("product/price: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                reviews.append(str_entry)
+                reviews.append(str_entry+",")
 
             elif "review/userId: " in x:
                 str_entry = x.replace("review/userId: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                reviews.append(str_entry)
+                reviews.append(str_entry+",")
 
             elif "review/profileName: " in x:
                 str_entry = x.replace("review/profileName: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                reviews.append('"'+str_entry+'"')
+                reviews.append('"'+str_entry+'",')
 
             elif "review/helpfulness: " in x:
                 str_entry = x.replace("review/helpfulness: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                reviews.append(str_entry)
+                reviews.append(str_entry+",")
 
             elif "review/score: " in x:
                 str_entry = x.replace("review/score: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                reviews.append(str_entry)
+                reviews.append(str_entry+",")
                 scores.append(str(str_entry)+",")
                 scores.append(str(count)+"\n")
-                with open("scores.txt","a") as scores_file:
-                    for entry in scores:
-                        scores_file.write(str(entry))
-                del scores[:]
 
 
             elif "review/time: " in x:
                 str_entry = x.replace("review/time: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                reviews.append(str_entry)
+                reviews.append(str_entry+",")
 
             if "review/summary: " in x:
                 str_entry = x.replace("review/summary: ","").replace("\\","\\").replace('"',quote).strip('\n')
@@ -84,12 +77,9 @@ def parseData(file):
                 terms = terms.split(" ")
                 for term in terms:
                     if len(term)>2:
-                        rterms.append(term.lower())
+                        rterms.append(term.lower()+",")
                         rterms.append(str(count)+"\n")
-                        with open("rterms.txt","a") as rterms_file:
-                            rterms_file.write(','.join(str(entry) for entry in rterms))
-                        del rterms[:]
-                reviews.append('"'+str_entry+'"')
+                reviews.append('"'+str_entry+'",')
 
             if "review/text: " in x:
                 str_entry = x.replace("review/text: ","").replace("\\","\\").replace('"',quote).strip('\n')
@@ -98,15 +88,27 @@ def parseData(file):
                 terms = terms.split(" ")
                 for term in terms:
                     if len(term)>2:
-                        rterms.append(term.lower())
+                        rterms.append(term.lower()+",")
                         rterms.append(str(count)+"\n")
-                        with open("rterms.txt","a") as rterms_file:
-                            rterms_file.write(','.join(str(entry) for entry in rterms))
-                        del rterms[:]
-                with open("reviews.txt","a") as reviews_file:
-                    reviews_file.write(','.join(str(entry) for entry in reviews))
-                del reviews[:]
+
+
                 count+=1
+
+    with open("pterms.txt","a") as pterms_file:
+        for entry in pterms:
+            pterms_file.write(entry)
+
+    with open("scores.txt","a") as scores_file:
+        for entry in scores:
+            scores_file.write(str(entry))
+
+    with open("rterms.txt","a") as rterms_file:
+        for entry in rterms:
+            rterms_file.write(str(entry))
+
+    with open("reviews.txt","a") as reviews_file:
+        for entry in reviews:
+            reviews_file.write(entry)
 
 
     return file
