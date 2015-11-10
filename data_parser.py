@@ -15,6 +15,7 @@
 #
 import string
 import re
+import subprocess
 
 # TODO add comma after every x entry, optimize
 
@@ -71,7 +72,7 @@ def parseData(file):
                 str_entry = x.replace("review/time: ","").replace("\\","\\").replace('"',quote).strip('\n')
                 reviews.append(str_entry+",")
 
-            if "review/summary: " in x:
+            elif "review/summary: " in x:
                 str_entry = x.replace("review/summary: ","").replace("\\","\\").replace('"',quote).strip('\n')
                 terms = replace_punctuation.sub(" ", str_entry)
                 terms = terms.split(" ")
@@ -81,7 +82,7 @@ def parseData(file):
                         rterms.append(str(count)+"\n")
                 reviews.append('"'+str_entry+'",')
 
-            if "review/text: " in x:
+            elif "review/text: " in x:
                 str_entry = x.replace("review/text: ","").replace("\\","\\").replace('"',quote).strip('\n')
                 reviews.append('"'+str_entry+'"\n')
                 terms = replace_punctuation.sub(" ", str_entry)
@@ -90,7 +91,6 @@ def parseData(file):
                     if len(term)>2:
                         rterms.append(term.lower()+",")
                         rterms.append(str(count)+"\n")
-
 
                 count+=1
 
@@ -111,4 +111,9 @@ def parseData(file):
             reviews_file.write(entry)
 
 
-    return file
+    return ['pterms.txt','scores.txt','rterms.txt']
+
+def sort(files):
+    # TODO pipe output
+    for file in files:
+        subprocess.Popen(['sort','-u',file])
