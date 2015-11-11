@@ -1,3 +1,0 @@
-#!/bin/bash
-
-python2.7 ExpectedSarsa5.py > 5.txt
