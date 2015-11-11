@@ -112,8 +112,3 @@ def parseData(file):
 
 
     return ['pterms.txt','scores.txt','rterms.txt']
-
-def sort(files):
-    # TODO pipe output
-    for file in files:
-        subprocess.Popen(['sort','-u',file])
