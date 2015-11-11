@@ -13,10 +13,12 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-
+import data_parser
 
 def main():
-    pass
+    file = input("Enter review data file to build indicies: ")
+    data_parser.parseData(file)
+    data_parser.buildIndex("./dbload.sh")
 
 
 

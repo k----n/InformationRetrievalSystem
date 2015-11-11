@@ -17,8 +17,6 @@ import string
 import re
 import subprocess
 
-# TODO add comma after every x entry, optimize
-
 def parseData(file):
     with open(file) as main_file:
         count = 1
@@ -110,5 +108,5 @@ def parseData(file):
         for entry in reviews:
             reviews_file.write(entry)
 
-
-    return ['pterms.txt','scores.txt','rterms.txt']
+def buildIndex(file):
+    subprocess.call([file])
