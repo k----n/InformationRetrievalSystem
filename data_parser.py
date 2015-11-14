@@ -15,82 +15,81 @@
 #
 import string
 import re
-import subprocess
+import sys
 
-def parseData(file):
-    with open(file) as main_file:
-        count = 1
-        reviews = list()
-        pterms = list()
-        rterms = list()
-        scores = list()
-        quote = '&' + 'quot' + ';'
-        replace_punctuation = re.compile('[%s]' % re.escape(string.punctuation))
-        for x in main_file:
-            if "product/productId: " in x:
-                reviews.append(str(count)+",")
-                str_entry = x.replace("product/productId: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                reviews.append(str_entry+",")
+def parseData(main_file):
+    count = 1
+    reviews = list()
+    pterms = list()
+    rterms = list()
+    scores = list()
+    quote = '&' + 'quot' + ';'
+    replace_punctuation = re.compile('[%s]' % re.escape(string.punctuation))
+    for x in main_file:
+        if "product/productId: " in x:
+            reviews.append(str(count)+",")
+            str_entry = x.replace("product/productId: ","").replace("\\","\\\\").replace('"',quote).strip('\n')
+            reviews.append(str_entry+",")
 
-            elif "product/title: " in x:
-                str_entry = x.replace("product/title: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                terms = replace_punctuation.sub(" ", str_entry)
-                terms = terms.split(" ")
-                for term in terms:
-                    if len(term)>2:
-                        pterms.append(term.lower()+",")
-                        pterms.append(str(count)+"\n")
+        elif "product/title: " in x:
+            str_entry = x.replace("product/title: ","").replace("\\","\\\\").replace('"',quote).strip('\n')
+            terms = replace_punctuation.sub(" ", str_entry)
+            terms = terms.split(" ")
+            for term in terms:
+                if len(term)>2:
+                    pterms.append(term.lower()+",")
+                    pterms.append(str(count)+"\n")
 
-                reviews.append('"'+str_entry+'",')
+            reviews.append('"'+str_entry+'",')
 
-            elif "product/price: " in x:
-                str_entry = x.replace("product/price: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                reviews.append(str_entry+",")
+        elif "product/price: " in x:
+            str_entry = x.replace("product/price: ","").replace("\\","\\\\").replace('"',quote).strip('\n')
+            reviews.append(str_entry+",")
 
-            elif "review/userId: " in x:
-                str_entry = x.replace("review/userId: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                reviews.append(str_entry+",")
+        elif "review/userId: " in x:
+            str_entry = x.replace("review/userId: ","").replace("\\","\\\\").replace('"',quote).strip('\n')
+            reviews.append(str_entry+",")
 
-            elif "review/profileName: " in x:
-                str_entry = x.replace("review/profileName: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                reviews.append('"'+str_entry+'",')
+        elif "review/profileName: " in x:
+            str_entry = x.replace("review/profileName: ","").replace("\\","\\\\").replace('"',quote).strip('\n')
+            reviews.append('"'+str_entry+'",')
 
-            elif "review/helpfulness: " in x:
-                str_entry = x.replace("review/helpfulness: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                reviews.append(str_entry+",")
+        elif "review/helpfulness: " in x:
+            str_entry = x.replace("review/helpfulness: ","").replace("\\","\\\\").replace('"',quote).strip('\n')
+            reviews.append(str_entry+",")
 
-            elif "review/score: " in x:
-                str_entry = x.replace("review/score: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                reviews.append(str_entry+",")
-                scores.append(str(str_entry)+",")
-                scores.append(str(count)+"\n")
+        elif "review/score: " in x:
+            str_entry = x.replace("review/score: ","").replace("\\","\\\\").replace('"',quote).strip('\n')
+            reviews.append(str_entry+",")
+            scores.append(str(str_entry)+",")
+            scores.append(str(count)+"\n")
 
 
-            elif "review/time: " in x:
-                str_entry = x.replace("review/time: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                reviews.append(str_entry+",")
+        elif "review/time: " in x:
+            str_entry = x.replace("review/time: ","").replace("\\","\\\\").replace('"',quote).strip('\n')
+            reviews.append(str_entry+",")
 
-            elif "review/summary: " in x:
-                str_entry = x.replace("review/summary: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                terms = replace_punctuation.sub(" ", str_entry)
-                terms = terms.split(" ")
-                for term in terms:
-                    if len(term)>2:
-                        rterms.append(term.lower()+",")
-                        rterms.append(str(count)+"\n")
-                reviews.append('"'+str_entry+'",')
+        elif "review/summary: " in x:
+            str_entry = x.replace("review/summary: ","").replace("\\","\\\\").replace('"',quote).strip('\n')
+            terms = replace_punctuation.sub(" ", str_entry)
+            terms = terms.split(" ")
+            for term in terms:
+                if len(term)>2:
+                    rterms.append(term.lower()+",")
+                    rterms.append(str(count)+"\n")
+            reviews.append('"'+str_entry+'",')
 
-            elif "review/text: " in x:
-                str_entry = x.replace("review/text: ","").replace("\\","\\").replace('"',quote).strip('\n')
-                reviews.append('"'+str_entry+'"\n')
-                terms = replace_punctuation.sub(" ", str_entry)
-                terms = terms.split(" ")
-                for term in terms:
-                    if len(term)>2:
-                        rterms.append(term.lower()+",")
-                        rterms.append(str(count)+"\n")
+        elif "review/text: " in x:
+            str_entry = x.replace("review/text: ","").replace("\\","\\\\").replace('"',quote).strip('\n')
+            reviews.append('"'+str_entry+'"\n')
+            terms = replace_punctuation.sub(" ", str_entry)
+            terms = terms.split(" ")
+            for term in terms:
+                if len(term)>2:
+                    rterms.append(term.lower()+",")
+                    rterms.append(str(count)+"\n")
 
-                count+=1
+            count+=1
 
     with open("pterms.txt","a") as pterms_file:
         for entry in pterms:
@@ -108,5 +107,5 @@ def parseData(file):
         for entry in reviews:
             reviews_file.write(entry)
 
-def buildIndex(file):
-    subprocess.call([file])
+if __name__ == "__main__":
+    parseData(sys.stdin)
