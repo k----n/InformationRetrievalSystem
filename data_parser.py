@@ -13,7 +13,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import string
 import re
 import sys
 
@@ -24,7 +23,7 @@ def parseData(main_file):
     rterms = list()
     scores = list()
     quote = '&' + 'quot' + ';'
-    replace_punctuation = re.compile('[%s]' % re.escape(string.punctuation))
+    replace_punctuation = re.compile('[%s]' % re.escape('!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}~'))
     for x in main_file:
         if "product/productId: " in x:
             reviews.append(str(count)+",")
