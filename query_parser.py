@@ -15,6 +15,8 @@
 #
 import re
 
+# TODO query for _ characters
+
 def queryData(string):
     pterms = list()
     rterms = list()
