@@ -17,25 +17,31 @@ rtermsCursor = rterms.cursor()
 scoresCursor = scores.cursor()
 
 
-search = input("input querey u fuk: ")
+#search = input("input querey u fuk: ")
 #return (pterms,rterms,pprice,rscore,rdate,part_terms,terms)
-parsedSearch = queryData(search)
+search = "pprice < 60 pprice > 30 clothing"
 
+parsedSearch = queryData(search)
+print(parsedSearch)
 searchIndex = 0
-while searchIndex < len(parsedSearch)+1:
-    if len(parsedSearch[searchIndex])!=0:
+while searchIndex < len(parsedSearch):
+    if len(parsedSearch[searchIndex])>0:
         for termsIndex in range(0, len(parsedSearch[searchIndex])):
             if searchIndex == 0:
                 encodedTerm = (parsedSearch[searchIndex][termsIndex]).encode()
-                result = pterms.get(encodedTerm)
-                print (result)
+                ptermsID = pterms.get(encodedTerm)
 
-                break
-            break
-        break
-    break
+            if searchIndex == 1:
+                encodedTerm = (parsedSearch[searchIndex][termsIndex]).encode()
+                rtermsID = rterms.get(encodedTerm)
 
-#print(pterms.get(b'clothing').decode(), end="\n\n")
+            if searchIndex == 2:
+                length = 0
+                termstermsIndex = len(parsedSearch[6][length])
+                encodedTerm = (parsedSearch[6][termstermsIndex]).encode()
+
+    searchIndex+=1
+
 
 
 
