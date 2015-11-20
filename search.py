@@ -20,21 +20,22 @@ scoresCursor = scores.cursor()
 search = input("input querey u fuk: ")
 #return (pterms,rterms,pprice,rscore,rdate,part_terms,terms)
 parsedSearch = queryData(search)
+
 searchIndex = 0
 while searchIndex < len(parsedSearch)+1:
     if len(parsedSearch[searchIndex])!=0:
         for termsIndex in range(0, len(parsedSearch[searchIndex])):
             if searchIndex == 0:
-                print(parsedSearch[searchIndex[termsIndex]])
-                #print(pterms.get(parsedSearch[searchIndex[termsIndex]].encode(),end="\n\n"))
-
+                encodedTerm = (parsedSearch[searchIndex][termsIndex]).encode()
+                result = pterms.get(encodedTerm)
+                print (result)
 
                 break
             break
         break
     break
 
-print(pterms.get(b'clothing').decode(), end="\n\n")
+#print(pterms.get(b'clothing').decode(), end="\n\n")
 
 
 
