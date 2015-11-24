@@ -14,7 +14,6 @@
 #   limitations under the License.
 #
 import re
-import search
 
 def queryData(string):
     pterms = list()
@@ -73,4 +72,3 @@ if __name__ == "__main__":
         if query == "":
             break
         processed_query = queryData(query)
-        print(search.termsFilter(processed_query))
