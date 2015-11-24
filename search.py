@@ -21,77 +21,87 @@ higherScoresCursor = scores.cursor()
 #search = input("input querey u fuk: ")
 #return (pterms,rterms,pprice,rscore,rdate,part_terms,terms)
 #search = "pprice < 60 pprice > 30 clothing rscore < 5 rscore > 4.0  r:funchuck p:cow chron%  rdate > 2004/10/03 rdate < 2010/01/01"
-#search = "another rdate > 2010/01/01 pprice > 10"
+search = "another rdate > 2010/01/01 pprice > 10"
 #search = 'another rdate > 2010/01/01 pprice > 10 pprice < 60'
-search = "r:great cam%"
+#search = "cam%"
 
 parsedSearch = queryData(search)
-termLengthTable = []
-print(parsedSearch)
-# make a list to check the number of terms in the parsedSearch
-termLengthTable.append(len(parsedSearch[0]))    # length of pterms
-termLengthTable.append(len(parsedSearch[1]))    # length of rterms
-termLengthTable.append(len(parsedSearch[5]))    # length of part_terms
-termLengthTable.append(len(parsedSearch[6]))    # length of terms
-resultIDs = list()  # contains all the (binary) IDs of valid results
-resultIDs1 = set()
-resultIDs2 = set()
-resultIDs3 = set()
-resultIDs4 = set()
-index = 0
-for length in termLengthTable:
-    if index == 0 and length != 0:  # if pterms has something, search in pterms.idx only
-        ptermsLength = termLengthTable[0]
-        for ptermsIndex in range (0, ptermsLength):
-            encodedTerm = (parsedSearch[0][ptermsIndex]).encode()
-            iter = ptermsCursor.get(encodedTerm, db.DB_SET_RANGE)   # move cursor to the first item that has the term
-            while iter[0] == encodedTerm:
-                resultIDs1.append(iter[1])
-                iter = ptermsCursor.next()
-    elif index == 1 and length !=0:   # if rterms has something, search in rterms.idx only
-        rtermsLength = len(parsedSearch[1])
-        for rtermsIndex in range(0, rtermsLength):
-            encodedTerm = (parsedSearch[1][rtermsIndex]).encode()
-            iter = rtermsCursor.get(encodedTerm, db.DB_SET_RANGE)
-            while iter[0] == encodedTerm:
-                resultIDs2.append(iter[1])
-                iter = rtermsCursor.next()
-    elif index == 2 and length != 0:  # if part_terms has something, search for partial matching strings in pterms.idx and rterms.idx
-        part_termsLength = len(parsedSearch[5])
-        for part_termsIndex in range(0, part_termsLength):
-            term = parsedSearch[5][part_termsIndex].strip("%")
-            encodedTerm = term.encode()
-            #encodedTerm = (parsedSearch[5][part_termsIndex]).encode()
-            iter = rtermsCursor.get(encodedTerm, db.DB_SET_RANGE)   #search in rterms
-            while (iter[0].decode()).startswith(term, 0, len(term)):
-                resultIDs3.append(iter[1])
-                iter = rtermsCursor.next()
-            iter = ptermsCursor.get(encodedTerm, db.DB_SET_RANGE)   #search in pterms
-            while (iter[0].decode()).startswith(term, 0, len(term)):
-                resultIDs3.append(iter[1])
-                iter = ptermsCursor.next()
-    elif index == 3 and length != 0:    # if terms has something, search for the string in both pterms.idx and rterms.idx
-        termsLength = termLengthTable[3]
-        for termsIndex in range(0, termsLength):
-            encodedTerm = parsedSearch[6][termsIndex].encode()
-            iter1 = ptermsCursor.get(encodedTerm, db.DB_SET_RANGE)   # move cursor to the first item that has the term
-            while iter1[0] == encodedTerm:
-                resultIDs4.append(iter1[1])
-                iter1 = ptermsCursor.next()
-            iter2 = rtermsCursor.get(encodedTerm, db.DB_SET_RANGE)
-            while iter2[0] == encodedTerm:
-                resultIDs4.append(iter2[1])
-                iter2 = rtermsCursor.next()
-    index+=1
-    # all possible IDs should be found - do range searching now to narrow results
-
-resultIDs1 = [ID for ID in resultIDs1 if ID is not None] # remove None types
-resultIDs1 = set(resultIDs1)  # remove duplicates shitty way
-print(len(resultIDs1))
+def termsFilter(parsedSearch):
+    termLengthTable = []
+    print(parsedSearch)
+    # make a list to check the number of terms in the parsedSearch
+    termLengthTable.append(len(parsedSearch[0]))    # length of pterms
+    termLengthTable.append(len(parsedSearch[1]))    # length of rterms
+    termLengthTable.append(len(parsedSearch[5]))    # length of part_terms
+    termLengthTable.append(len(parsedSearch[6]))    # length of terms
+    #resultIDs = list()  # contains all the (binary) IDs of valid results
+    resultIDs1 = list()
+    resultIDs2 = list()
+    resultIDs3 = list()
+    resultIDs4 = list()
+    index = 0
+    for length in termLengthTable:
+        if index == 0 and length != 0:  # if pterms has something, search in pterms.idx only
+            ptermsLength = termLengthTable[0]
+            for ptermsIndex in range (0, ptermsLength):
+                encodedTerm = (parsedSearch[0][ptermsIndex]).encode()
+                iter = ptermsCursor.get(encodedTerm, db.DB_SET_RANGE)   # move cursor to the first item that has the term
+                while iter[0] == encodedTerm:
+                    resultIDs1.append(iter[1])
+                    iter = ptermsCursor.next()
+        elif index == 1 and length !=0:   # if rterms has something, search in rterms.idx only
+            rtermsLength = len(parsedSearch[1])
+            for rtermsIndex in range(0, rtermsLength):
+                encodedTerm = (parsedSearch[1][rtermsIndex]).encode()
+                iter = rtermsCursor.get(encodedTerm, db.DB_SET_RANGE)
+                while iter[0] == encodedTerm:
+                    resultIDs2.append(iter[1])
+                    iter = rtermsCursor.next()
+        elif index == 2 and length != 0:  # if part_terms has something, search for partial matching strings in pterms.idx and rterms.idx
+            part_termsLength = len(parsedSearch[5])
+            for part_termsIndex in range(0, part_termsLength):
+                term = parsedSearch[5][part_termsIndex].strip("%")
+                encodedTerm = term.encode()
+                #encodedTerm = (parsedSearch[5][part_termsIndex]).encode()
+                iter = rtermsCursor.get(encodedTerm, db.DB_SET_RANGE)   #search in rterms
+                while (iter[0].decode()).startswith(term, 0, len(term)):
+                    resultIDs3.append(iter[1])
+                    iter = rtermsCursor.next()
+                iter = ptermsCursor.get(encodedTerm, db.DB_SET_RANGE)   #search in pterms
+                while (iter[0].decode()).startswith(term, 0, len(term)):
+                    resultIDs3.append(iter[1])
+                    iter = ptermsCursor.next()
+        elif index == 3 and length != 0:    # if terms has something, search for the string in both pterms.idx and rterms.idx
+            termsLength = termLengthTable[3]
+            for termsIndex in range(0, termsLength):
+                encodedTerm = parsedSearch[6][termsIndex].encode()
+                iter1 = ptermsCursor.get(encodedTerm, db.DB_SET_RANGE)   # move cursor to the first item that has the term
+                while iter1[0] == encodedTerm:
+                    resultIDs4.append(iter1[1])
+                    iter1 = ptermsCursor.next()
+                iter2 = rtermsCursor.get(encodedTerm, db.DB_SET_RANGE)
+                while iter2[0] == encodedTerm:
+                    resultIDs4.append(iter2[1])
+                    iter2 = rtermsCursor.next()
+        index+=1
+        # all possible IDs should be found - do range searching now to narrow results
+    completeList = [resultIDs1, resultIDs2, resultIDs3, resultIDs4]
+    resultIDs = set(resultIDs1 or resultIDs2 or resultIDs3 or resultIDs4)
+    #print(completeList)
+    for results in completeList:
+        if len(results) > 0:
+            #print(results)
+            resultIDs = resultIDs & set(results)
+    return resultIDs
+#print(resultIDs)
+#resultIDs1 = [ID for ID in resultIDs1 if ID is not None] # remove None types
+#resultIDs1 = set(resultIDs1)  # remove duplicates shitty way
+#print(len(resultIDs1))
 #print(resultIDs1)
-termLengthTable = []
+
 #print("term search", resultIDs1)
 
+termLengthTable = []
 termLengthTable.append(len(parsedSearch[2]))    # length of pprice
 termLengthTable.append(len(parsedSearch[3]))    # length of rscore
 termLengthTable.append(len(parsedSearch[4]))    # length of rdate
@@ -136,10 +146,11 @@ else:
     resultIDs2 = resultIDs1
 '''
 if termLengthTable[1] > 0:
-    scoreResults = resultIDs1 & set(validLowerIDs)
+    scoreResults = resultIDs & set(validLowerIDs)
     scoreResults = scoreResults & set(validHigherIDs)
 else:
-    scoreResults = resultIDs1
+    scoreResults = resultIDs
+
 #print("score",scoreResults)
 
 #print(resultIDs2)
