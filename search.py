@@ -34,10 +34,10 @@ termLengthTable.append(len(parsedSearch[1]))    # length of rterms
 termLengthTable.append(len(parsedSearch[5]))    # length of part_terms
 termLengthTable.append(len(parsedSearch[6]))    # length of terms
 resultIDs = list()  # contains all the (binary) IDs of valid results
-resultIDs1 = list()
-resultIDs2 = list()
-resultIDs3 = list()
-resultIDs4 = list()
+resultIDs1 = set()
+resultIDs2 = set()
+resultIDs3 = set()
+resultIDs4 = set()
 index = 0
 for length in termLengthTable:
     if index == 0 and length != 0:  # if pterms has something, search in pterms.idx only
@@ -54,7 +54,7 @@ for length in termLengthTable:
             encodedTerm = (parsedSearch[1][rtermsIndex]).encode()
             iter = rtermsCursor.get(encodedTerm, db.DB_SET_RANGE)
             while iter[0] == encodedTerm:
-                resultIDs1.append(iter[1])
+                resultIDs2.append(iter[1])
                 iter = rtermsCursor.next()
     elif index == 2 and length != 0:  # if part_terms has something, search for partial matching strings in pterms.idx and rterms.idx
         part_termsLength = len(parsedSearch[5])
@@ -64,11 +64,11 @@ for length in termLengthTable:
             #encodedTerm = (parsedSearch[5][part_termsIndex]).encode()
             iter = rtermsCursor.get(encodedTerm, db.DB_SET_RANGE)   #search in rterms
             while (iter[0].decode()).startswith(term, 0, len(term)):
-                resultIDs1.append(iter[1])
+                resultIDs3.append(iter[1])
                 iter = rtermsCursor.next()
             iter = ptermsCursor.get(encodedTerm, db.DB_SET_RANGE)   #search in pterms
             while (iter[0].decode()).startswith(term, 0, len(term)):
-                resultIDs1.append(iter[1])
+                resultIDs3.append(iter[1])
                 iter = ptermsCursor.next()
     elif index == 3 and length != 0:    # if terms has something, search for the string in both pterms.idx and rterms.idx
         termsLength = termLengthTable[3]
@@ -76,11 +76,11 @@ for length in termLengthTable:
             encodedTerm = parsedSearch[6][termsIndex].encode()
             iter1 = ptermsCursor.get(encodedTerm, db.DB_SET_RANGE)   # move cursor to the first item that has the term
             while iter1[0] == encodedTerm:
-                resultIDs1.append(iter1[1])
+                resultIDs4.append(iter1[1])
                 iter1 = ptermsCursor.next()
             iter2 = rtermsCursor.get(encodedTerm, db.DB_SET_RANGE)
             while iter2[0] == encodedTerm:
-                resultIDs1.append(iter2[1])
+                resultIDs4.append(iter2[1])
                 iter2 = rtermsCursor.next()
     index+=1
     # all possible IDs should be found - do range searching now to narrow results
