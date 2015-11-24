@@ -16,8 +16,6 @@
 import re
 import search
 
-# TODO query for _ characters
-
 def queryData(string):
     pterms = list()
     rterms = list()
@@ -41,7 +39,7 @@ def queryData(string):
 
     string = re.sub("r:(\w+)", "", string)
 
-    find_compare = re.findall("(\w+)\s*([<>])+\s*([\w./]+)", string)
+    find_compare = re.findall("(\w+)\s*([<>])+\s*([\w/]+)", string)
 
     if find_compare:
         for query in find_compare:
@@ -52,7 +50,7 @@ def queryData(string):
             elif "rdate" in query:
                 rdate.append(query)
 
-    string = re.sub("(\w+)\s*([<>])+\s*([\w./]+)","", string)
+    string = re.sub("(\w+)\s*([<>])+\s*([\w/]+)","", string)
 
     find_part_terms = re.findall("\w+%", string)
 
