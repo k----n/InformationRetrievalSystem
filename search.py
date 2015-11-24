@@ -112,7 +112,9 @@ else:
             results.append(ID)
 print(results)
 
-
+# datetime conversion
+datetime.datetime.strptime("2013/02/14","%Y/%m/%d").timestamp() #to timestamp format
+datetime.datetime.fromtimestamp(int(1369029600)).strftime("%Y/%m/%d") # from timestamp format
 
 
 '''
@@ -150,6 +152,28 @@ reviewsCursor.close()
 # print(type(iter))
 # iter = ptermsCursor.next()
 #cur.close()
+
+
+def parse_reviews(reviews):
+    for result in reviews:
+        decode_result = result.decode()
+        decode_result = decode_result.split(",")
+        print("Entry:" + decode_result[0])
+        print("Product ID:" + decode_result[1])
+        print("Product Title:" + decode_result[2])
+        print("Product Price:" + decode_result[3])
+        print("UserID:" + decode_result[4])
+        print("Profile Name:" + decode_result[5])
+        print("Helpfulness:" + decode_result[6])
+        print("Score:" + decode_result[7])
+        print("Review Time:" + datetime.datetime.fromtimestamp(int(decode_result[8])).strftime("%Y/%m/%d"))
+        print("Review Summary:" + decode_result[9])
+        print("Review Text:" + decode_result[10])
+        print("------------")
+
+parse_reviews(reviewsCursor.first())
+
+reviewsCursor.close()
 
 reviews.close()
 pterms.close()
