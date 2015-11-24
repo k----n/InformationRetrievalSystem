@@ -30,7 +30,6 @@ termLengthTable.append(len(parsedSearch[0]))    # length of pterms
 termLengthTable.append(len(parsedSearch[1]))    # length of rterms
 termLengthTable.append(len(parsedSearch[5]))    # length of part_terms
 termLengthTable.append(len(parsedSearch[6]))    # length of terms
-print(termLengthTable)
 resultIDs1 = []  # contains all the (binary) IDs of valid results
 index = 0
 for length in termLengthTable:
@@ -72,34 +71,35 @@ for length in termLengthTable:
     # all possible IDs should be found - do range searching now to narrow results
 resultIDs1 = list(set(resultIDs1))  # remove duplicates shitty way
 resultIDs1 = [ID for ID in resultIDs1 if ID is not None] # remove None types
-termLengthTable = []
 
+termLengthTable = []
 print(resultIDs1)
 resultIDs2 = []
 termLengthTable.append(len(parsedSearch[2]))    # length of pprice
 termLengthTable.append(len(parsedSearch[3]))    # length of rscore
 termLengthTable.append(len(parsedSearch[4]))    # length of rdate
-print(termLengthTable)
+
 #get all the valid ids and merge both lists if there are any
 index = 0
 validLowerIDs = list()
 validHigherIDs = list()
 results = list()
 for amount in range(0, termLengthTable[1]):
-    numberChecked = parsedSearch[3][index][1]
-    if numberChecked == "<":    #less than search. gets all the items from beginning up to the number
+    signChecked = parsedSearch[3][index][1]
+    numberChecked = parsedSearch[3][index][2]
+    if signChecked == "<":    #less than search. gets all the items from beginning up to the number
         lowerIter = lowerScoresCursor.first()
-        print(lowerIter[0].decode())
+        #print(lowerIter[0].decode())
         while lowerIter is not None and lowerIter[0].decode() < numberChecked:
             validLowerIDs.append(lowerIter[1])
             lowerIter = lowerScoresCursor.next()
-    elif numberChecked == ">":  #greater than search. gets all the items from end down to the number
+    elif signChecked == ">":  #greater than search. gets all the items from end down to the number
         upperIter = higherScoresCursor.last()
         while upperIter is not None and upperIter[0].decode() > numberChecked:
             validHigherIDs.append(upperIter[1])
             upperIter=higherScoresCursor.prev()
     index+=1
-for ID in validLowerIDs:
+for ID in validLowerIDs:    #merge tables, valid ids in results
     if ID in validHigherIDs:
         results.append(ID)
 print(results)
@@ -136,12 +136,12 @@ for term in termLengthTable:
         break
 '''
 
-
+'''
 iter = lowerScoresCursor.first()
 while(iter):
     print(iter)
     iter = lowerScoresCursor.next()
-
+'''
 #print(type(iter[0].decode()))
 #print(iter[0][2])
 #i = 0
