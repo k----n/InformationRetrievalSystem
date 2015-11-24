@@ -18,12 +18,11 @@ rtermsCursor = rterms.cursor()
 lowerScoresCursor = scores.cursor()
 higherScoresCursor = scores.cursor()
 
-search = input("input query: ")
+#search = input("input query: ")
 search = 'camera rscore < 3'
 
 parsedSearch = queryData(search)
 termLengthTable = []
-print(parsedSearch)
 # make a list to check the number of terms in the parsedSearch
 termLengthTable.append(len(parsedSearch[0]))    # length of pterms
 termLengthTable.append(len(parsedSearch[1]))    # length of rterms
@@ -78,69 +77,55 @@ for length in termLengthTable:
                 resultIDs4.append(iter2[1])
                 iter2 = rtermsCursor.next()
     index+=1
-        # all possible IDs should be found - do range searching now to narrow results
+    # all possible IDs should be found - do range searching now to narrow results
 completeList = [resultIDs1, resultIDs2, resultIDs3, resultIDs4]
 resultIDs = set(resultIDs1 or resultIDs2 or resultIDs3 or resultIDs4)
-
 for results in completeList:
     if len(results) > 0:
-
         resultIDs = resultIDs & set(results)
 
-print(len(resultIDs))
-#print(resultIDs)
-#resultIDs1 = [ID for ID in resultIDs1 if ID is not None] # remove None types
-#resultIDs1 = set(resultIDs1)  # remove duplicates shitty way
-#print(len(resultIDs1))
-#print(resultIDs1)
 
-#print("term search", resultIDs1)
 
-termLengthTable = []
+termLengthTable = list()
 termLengthTable.append(len(parsedSearch[2]))    # length of pprice
 termLengthTable.append(len(parsedSearch[3]))    # length of rscore
 termLengthTable.append(len(parsedSearch[4]))    # length of rdate
-
-print(termLengthTable)
 #get all the valid ids and merge both lists if there are any
 index = 0
-validLowerIDs = list()
-validHigherIDs = list()
-
-
+validLowerScoreIDs = list()
+validHigherScoreIDs = list()
 for amount in range(0, termLengthTable[1]):
     signChecked = parsedSearch[3][index][1]
-    numberChecked = float(parsedSearch[3][index][2]) # checking ascii...decimals greater than bare
+    numberChecked = float(parsedSearch[3][index][2])
     if signChecked == "<":    #less than search. gets all the items from beginning up to the number
         lowerIter = lowerScoresCursor.first()
-        #print(lowerIter[0].decode())
+
         while lowerIter is not None and float(lowerIter[0].decode()) < numberChecked:
-            validLowerIDs.append(lowerIter[1])
+            validLowerScoreIDs.append(lowerIter[1])
             lowerIter = lowerScoresCursor.next()
     elif signChecked == ">":  #greater than search. gets all the items from end down to the number
         upperIter = higherScoresCursor.last()
         while upperIter is not None and float(upperIter[0].decode()) > numberChecked:
-            validHigherIDs.append(upperIter[1])
+            validHigherScoreIDs.append(upperIter[1])
             upperIter=higherScoresCursor.prev()
     index+=1
 
 scoreResults = resultIDs
-
 if termLengthTable[1] > 1:
-    scoreResults = scoreResults & validLowerIDs
-    scoreResults = scoreResults & validHigherIDs
-elif termLengthTable == 1:
-    if len(validLowerIDs) > len(validHigherIDs):
-        scoreResults = scoreResults & set(validLowerIDs)
-    elif len(validHigherIDs > len(validLowerIDs)):
-        scoreResults = scoreResults & set(validHigherIDs)
-print(len(scoreResults))
+    scoreResults = scoreResults & validLowerScoreIDs
+    scoreResults = scoreResults & validHigherScoreIDs
+elif termLengthTable[1] == 1:
+    if signChecked == '<':
+        scoreResults = scoreResults & set(validLowerScoreIDs)
+    elif signChecked == '>':
+        scoreResults = scoreResults & set(validHigherScoreIDs)
+
 index = 0 # index is terms in parsed search under rdate, 0 = no dates, 1 = 1 date, 2 = range of dates
 validLowerDateIDs = list()
 validHigherDateIDs = list()
 dateResults = list()
 if (termLengthTable[2]) > 0:   #there is some rdate criterias
-    while (index < termLengthTable[2]):
+    while index < termLengthTable[2]:
         for encodedID in scoreResults:
             iter = reviewsCursor.first()
             iter = reviews.get(encodedID, db.DB_SET)
@@ -148,48 +133,30 @@ if (termLengthTable[2]) > 0:   #there is some rdate criterias
             iter = [entry for entry in reader([iter])][0]
             dateTerm = parsedSearch[4][index]
             extractedDate = str(datetime.datetime.strptime(parsedSearch[4][index][2],"%Y/%m/%d").timestamp())  #date of input
-            #print(datetime.datetime.fromtimestamp(int(iter[7])).strftime("%Y/%m/%d"))
-            #print("date",iter[7])
             currentDate = iter[7]   #date of data
             if dateTerm[1] == '<':
-                #while iter is not None:
-                #    currentDate = iter[7]
                     if float(currentDate) < float(extractedDate):
-                        #print(dates[2])
-                        #print(encodedID)
                         validLowerDateIDs.append(encodedID)
-                #    iter = reviewsCursor.next()
-
-                        #print(iter)
-                        #print(datetime.datetime.fromtimestamp(int(iter[7])).strftime("%Y/%m/%d"))
-                        #print(iter[0])
             if dateTerm[1] == '>':
-                #while iter is not None:
-                    #currentDate = iter[7]
-                    #print(iter[1])
-                    print('current',currentDate)
-
                     if float(currentDate) > float(extractedDate):
-                        #print(encodedID)
                         validHigherDateIDs.append(encodedID)
-                #    iter = reviewsCursor.next()
-                    #print ("zero",iter[2])
-                    #print(iter)
-                        #print(iter)
-                        #print(datetime.datetime.fromtimestamp(int(iter[7])).strftime("%Y/%m/%d"))
-                        #print(iter[0])
         index += 1
 
+
+'''
+# datetime conversion
+datetime.datetime.strptime("2013/02/14","%Y/%m/%d").timestamp() #to timestamp format
+datetime.datetime.fromtimestamp(int(1369029600)).strftime("%Y/%m/%d") # from timestamp format
+'''
 dateResults = scoreResults
 if termLengthTable[2] > 1:
     dateResults = dateResults & set(validLowerDateIDs)
     dateResults = dateResults & set(validHigherDateIDs)
 elif termLengthTable[2] == 1:
-    if len(validLowerDateIDs) > len(validHigherDateIDs):
+    if parsedSearch[4][0][1] == '<':
         dateResults = dateResults & set(validLowerDateIDs)
-    elif len(validHigherDateIDs) > len(validLowerDateIDs):
+    elif parsedSearch[4][0][1] == '>':
         dateResults = dateResults & set(validHigherDateIDs)
-print((dateResults))
 
 ppriceIndex = 0
 validLowerPriceIDs = list()
@@ -198,7 +165,6 @@ priceResults = list()
 if (termLengthTable[0])>0: #there are some pprice criteria
     while ppriceIndex < termLengthTable[0]:
         for encodedID in dateResults:
-            #iter = reviewsCursor.first()
             iter = reviews.get(encodedID, db.DB_SET)
             iter = iter.decode()
             iter = [entry for entry in reader([iter])][0]
@@ -206,87 +172,29 @@ if (termLengthTable[0])>0: #there are some pprice criteria
             checkPrice = priceTerm[2]
             currentPrice = iter[2]
             if priceTerm[1] == '<':
-                #while iter is not None:
                     if currentPrice != 'unknown' and float(currentPrice) < float(checkPrice):
                         validLowerPriceIDs.append(encodedID)
-                #    iter = reviewsCursor.next()
-                    #checkPrice = priceTerm[2]
             if priceTerm[1] == '>':
-                #while iter is not None:
                 if currentPrice != 'unknown' and float(currentPrice) > float(checkPrice):
                     validHigherPriceIDs.append(encodedID)
-               #     iter = reviewsCursor.next()
-                    #checkPrice = priceTerm[2]
         ppriceIndex+=1
-
 
 priceResults = dateResults
 if termLengthTable[0] > 1:
     priceResults = priceResults & set(validLowerPriceIDs)
     priceResults = priceResults & set(validHigherPriceIDs)
 elif termLengthTable[0] == 1:
-    if len(validLowerPriceIDs) > len(validHigherPriceIDs):
+    if parsedSearch[2][0][1] == '<':
         priceResults = priceResults & set(validLowerPriceIDs)
-    elif len(validHigherPriceIDs) > len(validLowerPriceIDs):
+    elif parsedSearch[2][0][1] == '>':
         priceResults = priceResults & set(validHigherPriceIDs)
-'''
-if termLengthTable[0] > 0:
-    priceResults = set(priceResults)
-    priceResults = priceResults & dateResults
-else:
-    priceResults = dateResults
-'''
-print("price",priceResults)
-#if len(parsedSearch[])
-    #output
-    #encodedDate = datetime.datetime.fromtimestamp(int(iter[7])).strftime("%Y/%m/%d") # from timestamp format
-    #print(encodedDate)
-    #print(iter[7])
-    #encodeDate = datetime.datetime.fromtimestamp(iter[7]).strftime("%Y/%m/%d") # from timestamp format
-    #print(encodeDate)
+finalResults = priceResults
 
-    #iter = reviewsCursor.next()
-
-    #while iter:
-    #    print(iter)
-    #    iter = reviewsCursor.next()
-    #print(iter)
-
-
-# datetime conversion
-datetime.datetime.strptime("2013/02/14","%Y/%m/%d").timestamp() #to timestamp format
-datetime.datetime.fromtimestamp(int(1369029600)).strftime("%Y/%m/%d") # from timestamp format
-
-
-'''
-iter = lowerScoresCursor.first()
-while(iter):
-    print(iter)
-    iter = lowerScoresCursor.next()
-'''
-'''
-iter = reviewsCursor.first()
-while iter:
-    print("\n")
-    a=iter[0]
-    print(a)
-    iter = reviewsCursor.next()
-'''
-#reviewsCursor.close()
-
-
-
-
-#print(iter)
-#while iter:
-# print(type(iter))
-# iter = ptermsCursor.next()
-#cur.close()
 
 
 def parse_reviews(reviews):
-    for result in reviews:
-        decode_result = result.decode()
+    #for result in reviews:
+        decode_result = reviews.decode()
         decode_result = decode_result.split(",")
         print("Entry:" + decode_result[0])
         print("Product ID:" + decode_result[1])
@@ -301,10 +209,31 @@ def parse_reviews(reviews):
         print("Review Text:" + decode_result[10])
         print("------------")
 
+for ID in finalResults:
+    review = reviews.get(ID, db.DB_SET)
+    review = review.decode()
+    review = [entry for entry in reader([review])][0]
+    print("Entry:" + ID.decode())
+    print("Product ID:" + review[0])
+    print("Product Title:" + review[1])
+    print("Product Price:" + review[2])
+    print("UserID:" + review[3])
+    print("Profile Name:" + review[4])
+    print("Helpfulness:" + review[5])
+    print("Score:" + review[6])
+    print("Review Time:" + datetime.datetime.fromtimestamp(int(review[7])).strftime("%Y/%m/%d"))
+    print("Review Summary:" + review[8])
+    print("Review Text:" + review[9])
+    print("------------")
+    #parse_reviews(reviewsCursor)
+
 #parse_reviews(reviewsCursor.first())
 
 reviewsCursor.close()
-
+ptermsCursor.close()
+rtermsCursor.close()
+lowerScoresCursor.close()
+higherScoresCursor.close()
 reviews.close()
 pterms.close()
 rterms.close()
