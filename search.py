@@ -1,6 +1,7 @@
 from query_parser import queryData
 import datetime
 from bsddb3 import db
+from csv import reader
 #Get an instance of BerkeleyDB
 reviews = db.DB()
 pterms = db.DB()
@@ -17,11 +18,11 @@ rtermsCursor = rterms.cursor()
 lowerScoresCursor = scores.cursor()
 higherScoresCursor = scores.cursor()
 
-
 #search = input("input querey u fuk: ")
 #return (pterms,rterms,pprice,rscore,rdate,part_terms,terms)
-search = "pprice < 60 pprice > 30 clothing rscore < 5 rscore > 4  r:funchuck p:cow chron%  "
-
+#search = "pprice < 60 pprice > 30 clothing rscore < 5 rscore > 4.0  r:funchuck p:cow chron%  rdate > 2004/10/03 rdate < 2010/01/01"
+search = "another rdate > 2010/01/01 pprice > 10"
+#search = 'another rdate > 2010/01/01 pprice > 10 pprice < 60'
 
 parsedSearch = queryData(search)
 termLengthTable = []
@@ -82,7 +83,7 @@ resultIDs1 = list(set(resultIDs1))  # remove duplicates shitty way
 resultIDs1 = [ID for ID in resultIDs1 if ID is not None] # remove None types
 
 termLengthTable = []
-print("term search", resultIDs1)
+#print("term search", resultIDs1)
 
 termLengthTable.append(len(parsedSearch[2]))    # length of pprice
 termLengthTable.append(len(parsedSearch[3]))    # length of rscore
@@ -95,47 +96,143 @@ validHigherIDs = list()
 results = list()
 for amount in range(0, termLengthTable[1]):
     signChecked = parsedSearch[3][index][1]
-    numberChecked = (parsedSearch[3][index][2])+".0" # checking ascii...decimals greater than bare
+    numberChecked = float(parsedSearch[3][index][2]) # checking ascii...decimals greater than bare
     if signChecked == "<":    #less than search. gets all the items from beginning up to the number
         lowerIter = lowerScoresCursor.first()
         #print(lowerIter[0].decode())
-        while lowerIter is not None and lowerIter[0].decode() < numberChecked:
+        while lowerIter is not None and float(lowerIter[0].decode()) < numberChecked:
             validLowerIDs.append(lowerIter[1])
             lowerIter = lowerScoresCursor.next()
     elif signChecked == ">":  #greater than search. gets all the items from end down to the number
         upperIter = higherScoresCursor.last()
-        while upperIter is not None and upperIter[0].decode() > numberChecked:
+        while upperIter is not None and float(upperIter[0].decode()) > numberChecked:
             validHigherIDs.append(upperIter[1])
             upperIter=higherScoresCursor.prev()
     index+=1
 
-if termLengthTable[1] < 2:
+if termLengthTable[1] < 2:  # no range search
     if len(validLowerIDs) > len(validHigherIDs):
         results = validLowerIDs
     else:
         results = validHigherIDs
-else:
+else:                       # range search
     for ID in validLowerIDs and validHigherIDs:    #merge tables, valid ids in results
             results.append(ID)
-print("number search", results)
+#print("number search", results)
 resultIDs2 = []
-for ID in resultIDs1 and results:       # merge tables
-    resultIDs2.append(ID)
-
+if termLengthTable[1] < 0:
+    for ID in resultIDs1 and results:       # merge tables
+        resultIDs2.append(ID)
+    resultIDs2 = list(set(resultIDs2))
+else:
+    resultIDs2 = resultIDs1
 #print(resultIDs2)
-'''
-result = reviews.get(b'5')
-print(result)
-#iter = reviewsCursor.first()
-for encodedID in resultIDs2:
-    print("\n")
-    print(encodedID)
-    iter = reviews.get(encodedID, db.DB_SET)
-    while iter:
-        print(iter)
-        iter = reviewsCursor.next()
+
+index = 0 # index is terms in parsed search under rdate, 0 = no dates, 1 = 1 date, 2 = range of dates
+validLowerDateIDs = list()
+validHigherDateIDs = list()
+dateResults = list()
+if (termLengthTable[2]) > 0:   #there is some rdate criterias
+    while (index < termLengthTable[2]):
+        for encodedID in resultIDs2:
+            iter = reviewsCursor.first()
+            iter = reviews.get(encodedID, db.DB_SET)
+            iter = iter.decode()
+            iter = [entry for entry in reader([iter])][0]
+            dateTerm = parsedSearch[4][index]
+            extractedDate = str(datetime.datetime.strptime(parsedSearch[4][index][2],"%Y/%m/%d").timestamp())
+            #print(datetime.datetime.fromtimestamp(int(iter[7])).strftime("%Y/%m/%d"))
+            #print(iter[7])
+            currentDate = iter[7]
+            if dateTerm[1] == '<':
+                while iter is not None:
+                    if currentDate < extractedDate:
+                        #print(dates[2])
+                        #print(encodedID)
+                        validLowerDateIDs.append(encodedID)
+                    iter = reviewsCursor.next()
+                        #print(iter)
+                        #print(datetime.datetime.fromtimestamp(int(iter[7])).strftime("%Y/%m/%d"))
+                        #print(iter[0])
+            if dateTerm[1] == '>':
+                while iter is not None:
+                    if currentDate > extractedDate:
+                        #print(encodedID)
+                        validHigherDateIDs.append(encodedID)
+                    iter = reviewsCursor.next()
+                        #print(iter)
+                        #print(datetime.datetime.fromtimestamp(int(iter[7])).strftime("%Y/%m/%d"))
+                        #print(iter[0])
+        index += 1
+if termLengthTable[2] < 0:
+    if termLengthTable[2]<2: #no range search
+        if len(validLowerDateIDs) > len(validHigherDateIDs):
+            dateResults = validLowerDateIDs
+        else:
+            dateResults = validHigherDateIDs
+    else:                       # range search
+        for ID in validLowerDateIDs and validHigherDateIDs:    #merge tables, valid ids in dateResults
+            dateResults.append(ID)
+else:
+    dateResults = resultIDs2
+dateResults = list(set(dateResults))
+#print(dateResults)
+
+ppriceIndex = 0
+validLowerPriceIDs = list()
+validHigherPriceIDs = list()
+priceResults = list()
+if (termLengthTable[0])>0: #there are some pprice criteria
+    while (ppriceIndex < termLengthTable[0]):
+        for encodedID in dateResults:
+            iter = reviewsCursor.first()
+            iter = reviews.get(encodedID, db.DB_SET)
+            iter = iter.decode()
+            iter = [entry for entry in reader([iter])][0]
+            priceTerm = parsedSearch[2][ppriceIndex]
+            checkPrice = priceTerm[2]
+            #print(checkPrice)
+            currentPrice = iter[2]
+            if priceTerm[1] == '<':
+                while iter is not None:
+                    if currentDate != 'unknown' and currentDate < checkPrice:
+                        validLowerPriceIDs.append(encodedID)
+                    iter = reviewsCursor.next()
+            if priceTerm[1] == '>':
+                while iter is not None:
+                    if currentDate != 'unknown' and currentDate > checkPrice:
+                        validHigherIDs.append(encodedID)
+                    iter = reviewsCursor.next()
+        ppriceIndex+=1
+if termLengthTable[0] < 0:
+    if termLengthTable[1] < 2:#no range search
+        if (len(validLowerPriceIDs) > len(validHigherPriceIDs)):
+            priceResults = validLowerPriceIDs
+        else:
+            priceResults = validHigherPriceIDs
+    else:
+        for ID in validLowerPriceIDs and validHigherPriceIDs:
+            priceResults.append(ID)
+else:
+    priceResults = dateResults
+priceResults = list(set(priceResults))
+
+print((priceResults))
+#if len(parsedSearch[])
+    #output
+    #encodedDate = datetime.datetime.fromtimestamp(int(iter[7])).strftime("%Y/%m/%d") # from timestamp format
+    #print(encodedDate)
+    #print(iter[7])
+    #encodeDate = datetime.datetime.fromtimestamp(iter[7]).strftime("%Y/%m/%d") # from timestamp format
+    #print(encodeDate)
+
+    #iter = reviewsCursor.next()
+
+    #while iter:
+    #    print(iter)
+    #    iter = reviewsCursor.next()
     #print(iter)
-'''
+
 
 # datetime conversion
 datetime.datetime.strptime("2013/02/14","%Y/%m/%d").timestamp() #to timestamp format
@@ -152,7 +249,7 @@ while(iter):
 iter = reviewsCursor.first()
 while iter:
     print("\n")
-    a=iter[0][0]
+    a=iter[0]
     print(a)
     iter = reviewsCursor.next()
 '''
