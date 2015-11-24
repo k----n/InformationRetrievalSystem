@@ -20,7 +20,8 @@ higherScoresCursor = scores.cursor()
 
 #search = input("input querey u fuk: ")
 #return (pterms,rterms,pprice,rscore,rdate,part_terms,terms)
-search = "pprice < 60 pprice > 30 clothing rscore < 5 rscore > 4  r:funchuck p:cow chron% "
+#search = "pprice < 60 pprice > 30 clothing rscore < 5 rscore > 4  r:funchuck p:cow chron%  "
+search = "chrono"
 
 parsedSearch = queryData(search)
 termLengthTable = []
@@ -37,15 +38,18 @@ for length in termLengthTable:
         ptermsLength = termLengthTable[0]
         for ptermsIndex in range (0, ptermsLength):
             encodedTerm = (parsedSearch[0][ptermsIndex]).encode()
-
-            resultIDs1.append(pterms.get(encodedTerm))
-
+            iter = ptermsCursor.get(encodedTerm, db.DB_SET_RANGE)   # move cursor to the first item that has the term
+            while iter[0] == encodedTerm:
+                resultIDs1.append(iter[1])
+                iter = ptermsCursor.next()
     elif index == 1 and length !=0:   # if rterms has something, search in rterms.idx only
         rtermsLength = len(parsedSearch[1])
         for rtermsIndex in range(0, rtermsLength):
             encodedTerm = (parsedSearch[1][rtermsIndex]).encode()
-            resultIDs1.append(rterms.get(encodedTerm))
-
+            iter = rtermsCursor.get(encodedTerm, db.DB_SET_RANGE)
+            while iter[0] == encodedTerm:
+                resultIDs1.append(iter[1])
+                iter = rtermsCursor.next()
     elif index == 2 and length != 0:  # if part_terms has something, search for partial matching strings in pterms.idx and rterms.idx
         part_termsLength = len(parsedSearch[5])
         for part_termsIndex in range(0, part_termsLength):
@@ -60,20 +64,25 @@ for length in termLengthTable:
             while (iter[0].decode()).startswith(term, 0, len(term)):
                 resultIDs1.append(iter[1])
                 iter = ptermsCursor.next()
-
     elif index == 3 and length != 0:    # if terms has something, search for the string in both pterms.idx and rterms.idx
         termsLength = termLengthTable[3]
         for termsIndex in range(0, termsLength):
             encodedTerm = parsedSearch[6][termsIndex].encode()
-            resultIDs1.append(pterms.get(encodedTerm))
-            resultIDs1.append(rterms.get(encodedTerm))
+            iter1 = ptermsCursor.get(encodedTerm, db.DB_SET_RANGE)   # move cursor to the first item that has the term
+            while iter1[0] == encodedTerm:
+                resultIDs1.append(iter1[1])
+                iter1 = ptermsCursor.next()
+            iter2 = rtermsCursor.get(encodedTerm, db.DB_SET_RANGE)
+            while iter2[0] == encodedTerm:
+                resultIDs1.append(iter2[1])
+                iter2 = rtermsCursor.next()
     index+=1
     # all possible IDs should be found - do range searching now to narrow results
 resultIDs1 = list(set(resultIDs1))  # remove duplicates shitty way
 resultIDs1 = [ID for ID in resultIDs1 if ID is not None] # remove None types
 
 termLengthTable = []
-print(resultIDs1)
+print("term search", resultIDs1)
 resultIDs2 = []
 termLengthTable.append(len(parsedSearch[2]))    # length of pprice
 termLengthTable.append(len(parsedSearch[3]))    # length of rscore
@@ -96,12 +105,10 @@ for amount in range(0, termLengthTable[1]):
     elif signChecked == ">":  #greater than search. gets all the items from end down to the number
         upperIter = higherScoresCursor.last()
         while upperIter is not None and upperIter[0].decode() > numberChecked:
-            print(type(upperIter[0].decode()))
             validHigherIDs.append(upperIter[1])
             upperIter=higherScoresCursor.prev()
     index+=1
-print(validHigherIDs)
-print(validLowerIDs )
+
 if termLengthTable[1] < 2:
     if len(validLowerIDs) > len(validHigherIDs):
         results = validLowerIDs
@@ -110,8 +117,10 @@ if termLengthTable[1] < 2:
 else:
     for ID in validLowerIDs and validHigherIDs:    #merge tables, valid ids in results
             results.append(ID)
-print(results)
+print("number search", results)
 
+
+reviewsCursor
 # datetime conversion
 datetime.datetime.strptime("2013/02/14","%Y/%m/%d").timestamp() #to timestamp format
 datetime.datetime.fromtimestamp(int(1369029600)).strftime("%Y/%m/%d") # from timestamp format
@@ -171,7 +180,7 @@ def parse_reviews(reviews):
         print("Review Text:" + decode_result[10])
         print("------------")
 
-parse_reviews(reviewsCursor.first())
+#parse_reviews(reviewsCursor.first())
 
 reviewsCursor.close()
 
