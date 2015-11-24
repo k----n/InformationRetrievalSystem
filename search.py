@@ -20,7 +20,7 @@ higherScoresCursor = scores.cursor()
 
 #search = input("input querey u fuk: ")
 #return (pterms,rterms,pprice,rscore,rdate,part_terms,terms)
-search = "pprice < 60 pprice > 30 clothing rscore > 3 rscore < 5 r:funchuck p:cow chron% "
+search = "pprice < 60 pprice > 30 clothing rscore < 5 rscore > 4  r:funchuck p:cow chron% "
 
 parsedSearch = queryData(search)
 termLengthTable = []
@@ -86,7 +86,7 @@ validHigherIDs = list()
 results = list()
 for amount in range(0, termLengthTable[1]):
     signChecked = parsedSearch[3][index][1]
-    numberChecked = parsedSearch[3][index][2]
+    numberChecked = (parsedSearch[3][index][2])+".0" # checking ascii...decimals greater than bare
     if signChecked == "<":    #less than search. gets all the items from beginning up to the number
         lowerIter = lowerScoresCursor.first()
         #print(lowerIter[0].decode())
@@ -96,45 +96,24 @@ for amount in range(0, termLengthTable[1]):
     elif signChecked == ">":  #greater than search. gets all the items from end down to the number
         upperIter = higherScoresCursor.last()
         while upperIter is not None and upperIter[0].decode() > numberChecked:
+            print(type(upperIter[0].decode()))
             validHigherIDs.append(upperIter[1])
             upperIter=higherScoresCursor.prev()
     index+=1
-for ID in validLowerIDs:    #merge tables, valid ids in results
-    if ID in validHigherIDs:
-        results.append(ID)
+print(validHigherIDs)
+print(validLowerIDs )
+if termLengthTable[1] < 2:
+    if len(validLowerIDs) > len(validHigherIDs):
+        results = validLowerIDs
+    else:
+        results = validHigherIDs
+else:
+    for ID in validLowerIDs and validHigherIDs:    #merge tables, valid ids in results
+            results.append(ID)
 print(results)
 
 
 
-'''
-#old code for rscore searching, maybe unneeded now
-if termLengthTable[1] > 1 and index < termLengthTable[1]:  #range search on rscore
-    rangeList = list()
-    rangeList.append(parsedSearch[3][index][2])
-    rangeList.append(parsedSearch[3][index+1][2])
-    rangeList.sort()
-    lowerBound = rangeList[0].encode()
-    upperBound = rangeList[1].encode()
-    loweriter = lowerScoresCursor.get(lowerBound, db.DB_SET_RANGE)
-    higheriter = higherScoresCursor.get(upperBound, db.DB_SET_RANGE)
-    while loweriter is not None and loweriter[0].decode() <= higheriter[0].decode():
-        print(loweriter)
-        validIDs.append(loweriter[1])
-        loweriter = lowerScoresCursor.next()
-    print(validIDs)
-elif termLengthTable[1] == 1:   #only one score.. check for greater or less than because customers want shitty items if less than
-    if parsedSearch[3][index][1] == '>':
-        print ("wtf")
-
-else:
-    pass
-index = 0
-for term in termLengthTable:
-    if index == 0 and term > 1 and term != 0:    # there is a range search on pprice
-        break
-    elif term !=0 :           # one price search only
-        break
-'''
 
 '''
 iter = lowerScoresCursor.first()
@@ -144,12 +123,26 @@ while(iter):
 '''
 #print(type(iter[0].decode()))
 #print(iter[0][2])
-#i = 0
-#while iter:
-#    print(iter[0][3])
-#    i+=1
-#    iter = reviewsCursor.next()
+'''
+i = 0
+cur = reviews.cursor()
+iter = cur.first()
+while iter:
+    i+=1
+    iter = cur.next()
+cur.close()
+reviews.close()
+'''
+
+'''
+iter = reviewsCursor.first()
+while iter:
+    print("************************")
+    print(iter)
+    iter = reviewsCursor.next()
 reviewsCursor.close()
+'''
+
 
 
 #print(iter)
