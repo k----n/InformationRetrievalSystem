@@ -93,6 +93,7 @@ def termsFilter(parsedSearch):
             #print(results)
             resultIDs = resultIDs & set(results)
     return resultIDs
+
 #print(resultIDs)
 #resultIDs1 = [ID for ID in resultIDs1 if ID is not None] # remove None types
 #resultIDs1 = set(resultIDs1)  # remove duplicates shitty way
@@ -145,11 +146,11 @@ if termLengthTable[1] < 0:
 else:
     resultIDs2 = resultIDs1
 '''
-if termLengthTable[1] > 0:
-    scoreResults = resultIDs & set(validLowerIDs)
-    scoreResults = scoreResults & set(validHigherIDs)
-else:
-    scoreResults = resultIDs
+# if termLengthTable[1] > 0:
+#     scoreResults = resultIDs & set(validLowerIDs)
+#     scoreResults = scoreResults & set(validHigherIDs)
+# else:
+#     scoreResults = resultIDs
 
 #print("score",scoreResults)
 
@@ -341,3 +342,4 @@ reviews.close()
 pterms.close()
 rterms.close()
 scores.close()
+

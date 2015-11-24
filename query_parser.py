@@ -14,6 +14,7 @@
 #   limitations under the License.
 #
 import re
+import search
 
 def queryData(string):
     pterms = list()
@@ -65,9 +66,11 @@ def queryData(string):
 
     return (pterms,rterms,pprice,rscore,rdate,part_terms,terms)
 
-def processQuery(queries):
-    pass
-
 if __name__ == "__main__":
-    x = input("query: ")
-    print(queryData(x))
+    print("Enter nothing to exit")
+    while True:
+        query = input("query: ")
+        if query == "":
+            break
+        processed_query = queryData(query)
+        print(search.termsFilter(processed_query))
