@@ -20,8 +20,8 @@ higherScoresCursor = scores.cursor()
 
 #search = input("input querey u fuk: ")
 #return (pterms,rterms,pprice,rscore,rdate,part_terms,terms)
-#search = "pprice < 60 pprice > 30 clothing rscore < 5 rscore > 4  r:funchuck p:cow chron%  "
-search = "chrono"
+search = "pprice < 60 pprice > 30 clothing rscore < 5 rscore > 4  r:funchuck p:cow chron%  "
+
 
 parsedSearch = queryData(search)
 termLengthTable = []
@@ -83,7 +83,7 @@ resultIDs1 = [ID for ID in resultIDs1 if ID is not None] # remove None types
 
 termLengthTable = []
 print("term search", resultIDs1)
-resultIDs2 = []
+
 termLengthTable.append(len(parsedSearch[2]))    # length of pprice
 termLengthTable.append(len(parsedSearch[3]))    # length of rscore
 termLengthTable.append(len(parsedSearch[4]))    # length of rdate
@@ -118,9 +118,25 @@ else:
     for ID in validLowerIDs and validHigherIDs:    #merge tables, valid ids in results
             results.append(ID)
 print("number search", results)
+resultIDs2 = []
+for ID in resultIDs1 and results:       # merge tables
+    resultIDs2.append(ID)
 
+#print(resultIDs2)
+'''
+result = reviews.get(b'5')
+print(result)
+#iter = reviewsCursor.first()
+for encodedID in resultIDs2:
+    print("\n")
+    print(encodedID)
+    iter = reviews.get(encodedID, db.DB_SET)
+    while iter:
+        print(iter)
+        iter = reviewsCursor.next()
+    #print(iter)
+'''
 
-reviewsCursor
 # datetime conversion
 datetime.datetime.strptime("2013/02/14","%Y/%m/%d").timestamp() #to timestamp format
 datetime.datetime.fromtimestamp(int(1369029600)).strftime("%Y/%m/%d") # from timestamp format
@@ -132,27 +148,16 @@ while(iter):
     print(iter)
     iter = lowerScoresCursor.next()
 '''
-#print(type(iter[0].decode()))
-#print(iter[0][2])
-'''
-i = 0
-cur = reviews.cursor()
-iter = cur.first()
-while iter:
-    i+=1
-    iter = cur.next()
-cur.close()
-reviews.close()
-'''
-
 '''
 iter = reviewsCursor.first()
 while iter:
-    print("************************")
-    print(iter)
+    print("\n")
+    a=iter[0][0]
+    print(a)
     iter = reviewsCursor.next()
-reviewsCursor.close()
 '''
+#reviewsCursor.close()
+
 
 
 
