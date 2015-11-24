@@ -64,11 +64,3 @@ def queryData(string):
         terms+=find_terms
 
     return (pterms,rterms,pprice,rscore,rdate,part_terms,terms)
-
-if __name__ == "__main__":
-    print("Enter nothing to exit")
-    while True:
-        query = input("query: ")
-        if query == "":
-            break
-        processed_query = queryData(query)

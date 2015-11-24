@@ -3,23 +3,7 @@ import datetime
 from bsddb3 import db
 from csv import reader
 
-#Initialization of index files using BerkeleyDB
-reviews = db.DB()
-pterms = db.DB()
-rterms = db.DB()
-scores = db.DB()
-reviews.open("rw.idx")
-pterms.open("pt.idx")
-rterms.open("rt.idx")
-scores.open("sc.idx")
-
-reviewsCursor = reviews.cursor()
-ptermsCursor = pterms.cursor()
-rtermsCursor = rterms.cursor()
-lowerScoresCursor = scores.cursor()
-higherScoresCursor = scores.cursor()
-
-def termSearch(parsedSearch):
+def termSearch(parsedSearch, ptermsCursor, rtermsCursor):
     termLengthTable = []
     # make a list to check the number of terms in the parsedSearch
     termLengthTable.append(len(parsedSearch[0]))    # length of pterms
@@ -83,7 +67,7 @@ def termSearch(parsedSearch):
             resultIDs = resultIDs & set(results)
     return resultIDs
 
-def numberFilter(parsedSearch, resultIDs):
+def numberFilter(parsedSearch, resultIDs, lowerScoresCursor, higherScoresCursor, reviewsCursor, reviews):
     termLengthTable = list()
     termLengthTable.append(len(parsedSearch[2]))    # length of pprice
     termLengthTable.append(len(parsedSearch[3]))    # length of rscore
@@ -187,7 +171,7 @@ def numberFilter(parsedSearch, resultIDs):
     finalResults = priceResults
     return finalResults
 
-def printReviews(finalResults):
+def printReviews(finalResults, reviews):
     for ID in finalResults:
         review = reviews.get(ID, db.DB_SET)
         review = review.decode()
@@ -205,20 +189,44 @@ def printReviews(finalResults):
         print("Review Text:" + review[9])
         print("------------")
 
-#search = input("input query: ")
-search = 'another rdate > 2010/01/01 pprice > 10 pprice < 60'
-parsedSearch = queryData(search)
-terms = termSearch(parsedSearch)
-filtered = numberFilter(parsedSearch, terms)
-printReviews(filtered)
+def returnResults(query):
+    #Initialization of index files using BerkeleyDB
+    reviews = db.DB()
+    pterms = db.DB()
+    rterms = db.DB()
+    scores = db.DB()
+    reviews.open("rw.idx")
+    pterms.open("pt.idx")
+    rterms.open("rt.idx")
+    scores.open("sc.idx")
 
-reviewsCursor.close()
-ptermsCursor.close()
-rtermsCursor.close()
-lowerScoresCursor.close()
-higherScoresCursor.close()
-reviews.close()
-pterms.close()
-rterms.close()
-scores.close()
+    reviewsCursor = reviews.cursor()
+    ptermsCursor = pterms.cursor()
+    rtermsCursor = rterms.cursor()
+    lowerScoresCursor = scores.cursor()
+    higherScoresCursor = scores.cursor()
+
+    parsedSearch = queryData(query)
+    terms = termSearch(parsedSearch, ptermsCursor, rtermsCursor)
+    filtered = numberFilter(parsedSearch, terms, lowerScoresCursor, higherScoresCursor, reviewsCursor, reviews)
+    printReviews(filtered, reviews)
+
+    reviewsCursor.close()
+    ptermsCursor.close()
+    rtermsCursor.close()
+    lowerScoresCursor.close()
+    higherScoresCursor.close()
+    reviews.close()
+    pterms.close()
+    rterms.close()
+    scores.close()
+
+if __name__ == "__main__":
+    print("Enter nothing to exit")
+    while True:
+        query = input("query: ")
+        if query == "":
+            break
+
+        returnResults(query)
 
