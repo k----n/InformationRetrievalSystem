@@ -10,6 +10,10 @@ def termSearch(parsedSearch, ptermsCursor, rtermsCursor):
     termLengthTable.append(len(parsedSearch[1]))    # length of rterms
     termLengthTable.append(len(parsedSearch[5]))    # length of part_terms
     termLengthTable.append(len(parsedSearch[6]))    # length of terms
+    # check for case if no terms, but there are range searches
+    if termLengthTable[0] == 0 and termLengthTable[1] == 0 and termLengthTable[2] == 0 and termLengthTable[3] == 0:
+        return None
+    # there exist terms, search using the terms
     resultIDs1 = list()
     resultIDs2 = list()
     resultIDs3 = list()
@@ -68,11 +72,12 @@ def termSearch(parsedSearch, ptermsCursor, rtermsCursor):
     return resultIDs
 
 def numberFilter(parsedSearch, resultIDs, lowerScoresCursor, higherScoresCursor, reviewsCursor, reviews):
+    # do pprice, rscore, rdate searches on possible IDs returned from termSearch
     termLengthTable = list()
     termLengthTable.append(len(parsedSearch[2]))    # length of pprice
     termLengthTable.append(len(parsedSearch[3]))    # length of rscore
     termLengthTable.append(len(parsedSearch[4]))    # length of rdate
-    #get all the valid ids and merge both lists if there are any
+
     index = 0
     validLowerScoreIDs = list()
     validHigherScoreIDs = list()
@@ -92,15 +97,27 @@ def numberFilter(parsedSearch, resultIDs, lowerScoresCursor, higherScoresCursor,
                 upperIter=higherScoresCursor.prev()
         index+=1
 
-    scoreResults = resultIDs
-    if termLengthTable[1] > 1:
-        scoreResults = scoreResults & validLowerScoreIDs
-        scoreResults = scoreResults & validHigherScoreIDs
-    elif termLengthTable[1] == 1:
-        if signChecked == '<':
-            scoreResults = scoreResults & set(validLowerScoreIDs)
-        elif signChecked == '>':
-            scoreResults = scoreResults & set(validHigherScoreIDs)
+    if resultIDs != None:
+        scoreResults = resultIDs
+        if termLengthTable[1] > 1:
+            scoreResults = scoreResults & validLowerScoreIDs
+            scoreResults = scoreResults & validHigherScoreIDs
+        elif termLengthTable[1] == 1:
+            if signChecked == '<':
+                scoreResults = scoreResults & set(validLowerScoreIDs)
+            elif signChecked == '>':
+                scoreResults = scoreResults & set(validHigherScoreIDs)
+
+    else:
+        scoreResults = set()
+        if termLengthTable[1] > 1:
+            scoreResults = scoreResults | validLowerScoreIDs
+            scoreResults = scoreResults | validHigherScoreIDs
+        elif termLengthTable[1] == 1:
+            if signChecked == '<':
+                scoreResults = scoreResults | set(validLowerScoreIDs)
+            elif signChecked == '>':
+                scoreResults = scoreResults | set(validHigherScoreIDs)
 
     '''
     # datetime conversion
@@ -222,8 +239,8 @@ def returnResults(query):
     scores.close()
 
 if __name__ == "__main__":
-    print("Enter nothing to exit")
     while True:
+        print("Enter nothing to exit")
         query = input("query: ")
         if query == "":
             break
