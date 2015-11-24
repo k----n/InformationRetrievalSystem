@@ -1,5 +1,5 @@
 from query_parser import queryData
-
+import datetime
 from bsddb3 import db
 #Get an instance of BerkeleyDB
 reviews = db.DB()
@@ -14,12 +14,13 @@ scores.open("sc.idx")
 reviewsCursor = reviews.cursor()
 ptermsCursor = pterms.cursor()
 rtermsCursor = rterms.cursor()
-scoresCursor = scores.cursor()
+lowerScoresCursor = scores.cursor()
+higherScoresCursor = scores.cursor()
 
 
 #search = input("input querey u fuk: ")
 #return (pterms,rterms,pprice,rscore,rdate,part_terms,terms)
-search = "pprice < 60 pprice > 30 clothing rscore < 3 r:funchuck p:cow blue%"
+search = "pprice < 60 pprice > 30 clothing rscore > 3 rscore < 5 r:funchuck p:cow chron% "
 
 parsedSearch = queryData(search)
 termLengthTable = []
@@ -30,41 +31,125 @@ termLengthTable.append(len(parsedSearch[1]))    # length of rterms
 termLengthTable.append(len(parsedSearch[5]))    # length of part_terms
 termLengthTable.append(len(parsedSearch[6]))    # length of terms
 print(termLengthTable)
-resultIDs = []  # contains all the (binary) IDs of valid results
+resultIDs1 = []  # contains all the (binary) IDs of valid results
 index = 0
 for length in termLengthTable:
     if index == 0 and length != 0:  # if pterms has something, search in pterms.idx only
         ptermsLength = termLengthTable[0]
         for ptermsIndex in range (0, ptermsLength):
             encodedTerm = (parsedSearch[0][ptermsIndex]).encode()
-            resultIDs.append(pterms.get(encodedTerm))
+
+            resultIDs1.append(pterms.get(encodedTerm))
+
     elif index == 1 and length !=0:   # if rterms has something, search in rterms.idx only
         rtermsLength = len(parsedSearch[1])
         for rtermsIndex in range(0, rtermsLength):
             encodedTerm = (parsedSearch[1][rtermsIndex]).encode()
-            resultIDs.append(rterms.get(encodedTerm))
+            resultIDs1.append(rterms.get(encodedTerm))
+
     elif index == 2 and length != 0:  # if part_terms has something, search for partial matching strings in pterms.idx and rterms.idx
         part_termsLength = len(parsedSearch[5])
         for part_termsIndex in range(0, part_termsLength):
             term = parsedSearch[5][part_termsIndex].strip("%")
             encodedTerm = term.encode()
             #encodedTerm = (parsedSearch[5][part_termsIndex]).encode()
-            resultIDs.append(rtermsCursor.get(encodedTerm, db.DB_SET_RANGE))
+            iter = rtermsCursor.get(encodedTerm, db.DB_SET_RANGE)   #search in rterms
+            while (iter[0].decode()).startswith(term, 0, len(term)):
+                resultIDs1.append(iter[1])
+                iter = rtermsCursor.next()
+            iter = ptermsCursor.get(encodedTerm, db.DB_SET_RANGE)   #search in pterms
+            while (iter[0].decode()).startswith(term, 0, len(term)):
+                resultIDs1.append(iter[1])
+                iter = ptermsCursor.next()
+
     elif index == 3 and length != 0:    # if terms has something, search for the string in both pterms.idx and rterms.idx
         termsLength = termLengthTable[3]
         for termsIndex in range(0, termsLength):
             encodedTerm = parsedSearch[6][termsIndex].encode()
-            resultIDs.append(pterms.get(encodedTerm))
-            resultIDs.append(rterms.get(encodedTerm))
+            resultIDs1.append(pterms.get(encodedTerm))
+            resultIDs1.append(rterms.get(encodedTerm))
     index+=1
-print(resultIDs)
+    # all possible IDs should be found - do range searching now to narrow results
+resultIDs1 = list(set(resultIDs1))  # remove duplicates shitty way
+resultIDs1 = [ID for ID in resultIDs1 if ID is not None] # remove None types
+termLengthTable = []
+
+print(resultIDs1)
+resultIDs2 = []
+termLengthTable.append(len(parsedSearch[2]))    # length of pprice
+termLengthTable.append(len(parsedSearch[3]))    # length of rscore
+termLengthTable.append(len(parsedSearch[4]))    # length of rdate
+print(termLengthTable)
+#get all the valid ids and merge both lists if there are any
+index = 0
+validLowerIDs = list()
+validHigherIDs = list()
+results = list()
+for amount in range(0, termLengthTable[1]):
+    numberChecked = parsedSearch[3][index][1]
+    if numberChecked == "<":    #less than search. gets all the items from beginning up to the number
+        lowerIter = lowerScoresCursor.first()
+        print(lowerIter[0].decode())
+        while lowerIter is not None and lowerIter[0].decode() < numberChecked:
+            validLowerIDs.append(lowerIter[1])
+            lowerIter = lowerScoresCursor.next()
+    elif numberChecked == ">":  #greater than search. gets all the items from end down to the number
+        upperIter = higherScoresCursor.last()
+        while upperIter is not None and upperIter[0].decode() > numberChecked:
+            validHigherIDs.append(upperIter[1])
+            upperIter=higherScoresCursor.prev()
+    index+=1
+for ID in validLowerIDs:
+    if ID in validHigherIDs:
+        results.append(ID)
+print(results)
 
 
-#iter = reviewsCursor.first()
+
+'''
+#old code for rscore searching, maybe unneeded now
+if termLengthTable[1] > 1 and index < termLengthTable[1]:  #range search on rscore
+    rangeList = list()
+    rangeList.append(parsedSearch[3][index][2])
+    rangeList.append(parsedSearch[3][index+1][2])
+    rangeList.sort()
+    lowerBound = rangeList[0].encode()
+    upperBound = rangeList[1].encode()
+    loweriter = lowerScoresCursor.get(lowerBound, db.DB_SET_RANGE)
+    higheriter = higherScoresCursor.get(upperBound, db.DB_SET_RANGE)
+    while loweriter is not None and loweriter[0].decode() <= higheriter[0].decode():
+        print(loweriter)
+        validIDs.append(loweriter[1])
+        loweriter = lowerScoresCursor.next()
+    print(validIDs)
+elif termLengthTable[1] == 1:   #only one score.. check for greater or less than because customers want shitty items if less than
+    if parsedSearch[3][index][1] == '>':
+        print ("wtf")
+
+else:
+    pass
+index = 0
+for term in termLengthTable:
+    if index == 0 and term > 1 and term != 0:    # there is a range search on pprice
+        break
+    elif term !=0 :           # one price search only
+        break
+'''
+
+
+iter = lowerScoresCursor.first()
+while(iter):
+    print(iter)
+    iter = lowerScoresCursor.next()
+
+#print(type(iter[0].decode()))
+#print(iter[0][2])
+#i = 0
 #while iter:
-#    print(type(iter))
+#    print(iter[0][3])
+#    i+=1
 #    iter = reviewsCursor.next()
-#ptermsCursor.close()
+reviewsCursor.close()
 
 
 #print(iter)
